@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "name": "cmd_evasion_sample",
+    "target_rule": "win_net_start_service",
+    "max_payload_len": 400
+  },
+  "terminals": {
+    "executables": [
+      {"tok": "net.exe", "weight": 1.0},
+      {"tok": "net1.exe", "weight": 0.8},
+      {"tok": "sc.exe", "weight": 0.7}
+    ],
+    "arguments": [
+      {"tok": "<service>", "examples": ["Spooler", "W32Time", "BITS"], "weight": 1.0}
+    ],
+    "wrappers": [
+      {"fmt": "{}", "weight": 1.0},
+      {"fmt": "cmd.exe /c {}", "weight": 0.9},
+      {"fmt": "echo {} | cmd", "weight": 0.4}
+    ],
+    "noise": [
+      {"tok": "\"\"", "weight": 0.2},
+      {"tok": "&::", "weight": 0.15}
+    ]
+  },
+  "obfuscation_groups": {
+    "caret_escape": {
+      "operators": [
+        {"name": "caret_1", "sample": "n^et.exe", "prob": 0.12},
+        {"name": "caret_2", "sample": "ne^t.exe", "prob": 0.08}
+      ]
+    },
+    "quote_wrap": {
+      "operators": [
+        {"name": "double_quote", "sample": "\"net.exe\"", "prob": 0.25}
+      ]
+    },
+    "case_variants": {
+      "operators": [
+        {"name": "upper", "sample": "NET.EXE", "prob": 0.15},
+        {"name": "mixed", "sample": "NeT.ExE", "prob": 0.05}
+      ]
+    }
+  },
+  "rules": {
+    "payload_core": {
+      "structure": [
+        {"type": "choose", "from": "executables"},
+        {"type": "sep", "tok": " "},
+        {"type": "literal", "tok": "start"},
+        {"type": "sep", "tok": " "},
+        {"type": "choose", "from": "arguments"}
+      ],
+      "constraints": {
+        "must_contain_keyword": " start ",
+        "regex_positive": ".*\\b(net\\.exe|sc\\.exe)\\b.*start.*"
+      }
+    }
+  },
+  "mutation_engine": {
+    "max_mutations": 3,
+    "preserve_keyword": true
+  },
+  "sampling": {
+    "strategy": "epsilon_greedy",
+    "epsilon_seed": 0.2,
+    "epsilon_group": 0.15
+  }
+}
