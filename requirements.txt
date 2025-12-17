@@ -1,0 +1,9 @@
+pyyaml
+httpx 
+sqlalchemy 
+aiosqlite 
+uvicorn 
+fastapi 
+pytest 
+rich 
+python-dotenv

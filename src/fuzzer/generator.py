@@ -1,6 +1,7 @@
 # src/fuzzer/generator.py
 import random
-from typing import List
+from typing import List ,Tuple, Optional
+import re
 from .config import load_grammar
 from .grammar_loader import load_and_validate
 from .seed_store import SeedStore
@@ -10,17 +11,13 @@ from .validator import Validator, canonicalize_payload
 from .siem_client import SiemSimulator
 from .reward_engine import RewardEngine
 
+
 class PayloadGenerator:
-    def __init__(self, grammar: dict):
+    def __init__(self, grammar: dict, custom_seeds: list = None):
         self.grammar = grammar
         self.validator = Validator(grammar)
         # simple initial seeds
-        seeds = [
-            "net.exe start Spooler",
-            "net1.exe start Spooler",
-            "sc.exe start Spooler",
-            "powershell.exe Start-Service Spooler"
-        ]
+        seeds = custom_seeds
         self.seed_store = SeedStore(seeds, rng_seed=1)
         self.op_registry = OperatorRegistry(grammar, rng_seed=2)
         groups = self.op_registry.list_groups()
@@ -43,24 +40,262 @@ class PayloadGenerator:
             if upto >= r:
                 return it.get(key)
         return items[-1].get(key)
+    
 
-    def build_core_from_seed(self, seed: str):
-        # override if seed contains wrapper/noise
-        if "cmd.exe" in seed or "|" in seed or "&::" in seed or '"' in seed:
+    def _canonicalize_for_match(self, s: str) -> str:
+        """
+        Canonicalize nhẹ để phục vụ regex match:
+        - remove caret
+        - normalize spaces
+        - keep case-insensitive
+        """
+        s = s.replace("^", "")
+        s = re.sub(r"\s+", " ", s).strip()  
+        return s
+    
+
+    def build_core_from_seed(self, seed: str) -> Tuple[str, str]:
+        """
+        Build core payload from seed with priority:
+        1. Parse seed matching grammar structure → canonical
+        2. If seed has strong wrapper/noise → override
+        3. Otherwise → fallback canonical
+        """
+        seed_norm = self._canonicalize_for_match(seed)
+
+        # Step 1: Try parse to canonical
+        canonical = self._parse_seed_to_canonical(seed_norm)
+        if canonical is not None:
+            if self._has_strong_wrapper(seed_norm):
+                return seed, "override"
+            return canonical, "canonical"
+
+        # Step 2: Wrapper but cannot parse
+        if self._has_strong_wrapper(seed_norm):
             return seed, "override"
-        # try match exe start arg
-        import re
-        m = re.search(r"(\S+\.exe)\s+start\s+(\S+)", seed, flags=re.IGNORECASE)
-        if m:
-            exe = m.group(1)
-            arg = m.group(2)
-            core = f"{exe} start {arg}"
-            return core, "canonical"
-        # fallback: sample terminals
-        exe = self.pick_weighted(self.grammar["terminals"]["executables"], key="tok")
-        arg = self.rng.choice(self.grammar["terminals"]["arguments"][0]["examples"])
-        core = f"{exe} start {arg}"
-        return core, "fallback"
+
+        # Step 3: Fallback
+        return self._generate_canonical_from_grammar(), "fallback"
+    
+    def _parse_seed_to_canonical(self, seed: str) -> Optional[str]:
+        """
+        Parse seed according to grammar.rules.payload_core.structure.
+        Returns canonical payload or None.
+        """
+        rules = self.grammar.get("rules", {})
+        payload_core = rules.get("payload_core")
+        if not payload_core:
+            return None
+
+        structures = payload_core.get("structures")
+        if not structures or len(structures) == 0:
+            return None
+
+        for structure in structures:
+            canonical = self._try_parse_with_structure(seed,structure)
+            if canonical:
+                return canonical
+        return None
+
+    def _try_parse_with_structure(self, seed: str, structure: list) -> Optional[str]:
+        """Try to parse seed with a specific structure"""
+        pattern_parts = []
+        capture_steps = []
+
+        for step in structure:
+            t = step["type"]
+
+            if t == "choose":
+                from_key = step["from"]
+                terminals = self.grammar["terminals"].get(from_key, [])
+                alts = []
+
+                for term in terminals:
+                    tok = term.get("tok", "")
+                    if tok.startswith("<") and tok.endswith(">"):
+                        alts.append(r"\S+")
+                    else:
+                        alts.append(re.escape(tok))
+
+                # ONE capturing group per choose
+                pattern_parts.append(f"({'|'.join(alts)})")
+                capture_steps.append(step)
+
+            elif t == "literal":
+                pattern_parts.append(re.escape(step["tok"]))
+
+            elif t == "sep":
+                pattern_parts.append(re.escape(step["tok"]))
+
+            else:
+                return None  # unknown grammar type
+
+        pattern = "^" + "".join(pattern_parts) + "$"
+        match = re.match(pattern, seed, flags=re.IGNORECASE)
+        if not match:
+            return None
+
+        # Rebuild canonical payload
+        canonical_parts = []
+        group_idx = 1
+
+        for step in structure:
+            t = step["type"]
+            if t == "choose":
+                canonical_parts.append(match.group(group_idx))
+                group_idx += 1
+            elif t == "literal":
+                canonical_parts.append(step["tok"])
+            elif t == "sep":
+                canonical_parts.append(step["tok"])
+
+        canonical = "".join(canonical_parts)
+        canonical = self._canonicalize_for_match(canonical)
+
+        if self._matches_constraints(canonical):
+            return canonical
+
+        return None
+
+    def _has_strong_wrapper(self, seed: str) -> bool:
+        """
+        Detect real wrappers / shell constructs.
+        Executables themselves (e.g. powershell.exe) are NOT wrappers.
+        """
+        s = seed.lower()
+
+        strong_wrappers = [
+            "cmd.exe /c",
+            "cmd /c",
+            "echo ",
+            "|",
+            "&&",
+            "&::",
+        ]
+
+        for w in strong_wrappers:
+            if w in s:
+                return True
+
+        # fully wrapped in quotes
+        if seed.startswith('"') and seed.endswith('"'):
+            return True
+
+        return False
+    def _matches_constraints(self, payload: str) -> bool:
+        """
+        Validate payload against grammar constraints
+        """
+        rules = self.grammar.get("rules", {})
+        payload_core = rules.get("payload_core", {})
+        constraints = payload_core.get("constraints", {})
+
+        canon = self._canonicalize_for_match(payload)
+
+        # Handle must_contain_keyword (single string - for backward compatibility)
+        keyword = constraints.get("must_contain_keyword")
+        if keyword:
+            if isinstance(keyword, str):
+                if keyword not in canon:
+                    return False
+            elif isinstance(keyword, list):
+                # If it's a list, treat as must_contain_all
+                for kw in keyword:
+                    if kw not in canon:
+                        return False
+    
+        # Handle must_contain_all (array of keywords)
+        must_contain_all = constraints.get("must_contain_all")
+        if must_contain_all:
+            for kw in must_contain_all:
+                if kw not in canon:
+                    return False
+
+        # Handle regex_positive
+        regex_pos = constraints.get("regex_positive")
+        if regex_pos and not re.search(regex_pos, canon, flags=re.IGNORECASE):
+            return False
+
+        return True
+
+    def _generate_canonical_from_grammar(self) -> str:
+        """
+        Generate canonical payload strictly following grammar structures.
+        Always returns constraint-valid payload.
+        """
+        rules = self.grammar.get("rules", {})
+        payload_core = rules.get("payload_core")
+        if not payload_core:
+            # Check if terminals exist
+            if "executables" not in self.grammar.get("terminals", {}):
+                raise ValueError("Grammar missing required 'terminals.executables'")
+            
+            exe = self.pick_weighted(self.grammar["terminals"]["executables"], key="tok")
+            arg = self.rng.choice(self.grammar["terminals"]["arguments"][0]["examples"])
+            return f"{exe} start {arg}"
+
+        structures = payload_core.get("structures")  # ← Đổi từ "structure"
+        if not structures or len(structures) == 0:
+            raise ValueError("Grammar missing 'structures' in payload_core")
+        
+        # Pick first structure (hoặc random nếu muốn)
+        structure = structures[0]
+
+        MAX_RETRIES = 10
+        for attempt in range(MAX_RETRIES):
+            parts = []
+
+            for step in structure:
+                t = step["type"]
+
+                if t == "choose":
+                    from_key = step["from"]
+                    terminals = self.grammar["terminals"].get(from_key, [])
+                    
+                    if not terminals:
+                        raise ValueError(f"No terminals found for key '{from_key}'")
+
+                    # Handle examples
+                    if terminals[0].get("examples"):
+                        tok = self.rng.choice(terminals[0]["examples"])
+                    else:
+                        tok = self.pick_weighted(terminals, key="tok")
+                        
+                        # Handle placeholder tokens like <other_exe_placeholder>
+                        if tok.startswith("<") and tok.endswith(">"):
+                            placeholder_name = tok[1:-1]  # Remove < >
+                            
+                            # Get real tokens from same terminal list
+                            real_tokens = [t["tok"] for t in terminals if not t["tok"].startswith("<")]
+                            
+                            if real_tokens:
+                                tok = self.rng.choice(real_tokens)
+                            else:
+                                # Fallback to generic value
+                                tok = "placeholder_value"
+
+                    parts.append(tok)
+
+                elif t == "literal":
+                    parts.append(step["tok"])
+
+                elif t == "sep":
+                    parts.append(step["tok"])
+
+            candidate = "".join(parts)
+            candidate = self._canonicalize_for_match(candidate)
+
+            if self._matches_constraints(candidate):
+                return candidate
+
+        # Log để debug
+        print(f"[WARNING] Failed to satisfy constraints after {MAX_RETRIES} attempts")
+        print(f"Last candidate: {candidate}")
+        print(f"Constraints: {payload_core.get('constraints')}")
+        
+        # Return anyway (với warning) thay vì crash
+        return candidate
+
 
     def choose_wrapper(self):
         return self.pick_weighted(self.grammar["terminals"]["wrappers"], key="fmt")
@@ -84,7 +319,7 @@ class PayloadGenerator:
         core, mode = self.build_core_from_seed(seed.string)
         wrapper = self.choose_wrapper()
         mutated_core, applied = self.apply_mutations(core)
-        payload = wrapper.format(mutated_core)
+        payload = wrapper.format(payload=mutated_core)
         valid = self.validator.full_check(payload, self.grammar["meta"]["max_payload_len"])
         sim = self.siem.analyze(payload)
         novelty = 1.0  # placeholder; compute more precisely if you store corpus

@@ -1,7 +1,0 @@
-{
-  "seeds":[
-    {"id":"seed-0001","string":"powershell.exe <arg>","type":"canonical","q_s":0.2},
-    {"id":"seed-0002","string":"powershell -Command <arg>","type":"wrapper","q_s":0.1},
-    {"id":"seed-0003","string":"\"powershell.exe\" <arg>","type":"primitive","q_s":0.05}
-  ]
-}

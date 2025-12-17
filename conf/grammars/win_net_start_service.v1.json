@@ -44,13 +44,15 @@
   },
   "rules": {
     "payload_core": {
-      "structure": [
+      "structures": [
+      [
         {"type": "choose", "from": "executables"},
         {"type": "sep", "tok": " "},
         {"type": "literal", "tok": "start"},
         {"type": "sep", "tok": " "},
         {"type": "choose", "from": "arguments"}
-      ],
+      ]
+    ],
       "constraints": {
         "must_contain_keyword": " start ",
         "regex_positive": ".*\\b(net\\.exe|sc\\.exe)\\b.*start.*"

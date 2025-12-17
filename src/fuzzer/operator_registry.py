@@ -4,11 +4,26 @@ import random
 from typing import Dict, List, Tuple
 
 class Operator:
+    """
+    Operator represents a single obfuscation or mutation technique.
+
+    Each operator contains:
+    - name   : identifier of the operator
+    - sample : example pattern used as a heuristic hint
+               to decide how the operator should be applied
+    """
     def __init__(self, name: str, sample: str):
         self.name = name
         self.sample = sample
 
 class OperatorGroup:
+    """
+    OperatorGroup represents a group of related operators
+    sharing the same obfuscation strategy.
+
+    This class also stores bandit-related statistics
+    for group-level learning.
+    """
     def __init__(self, name: str, operators: List[Operator]):
         self.name = name
         self.operators = operators
@@ -16,6 +31,12 @@ class OperatorGroup:
         self.n_g = 0
 
 class OperatorRegistry:
+    """
+    OperatorRegistry manages all operator groups and
+    applies selected operators to core payloads.
+
+    It acts as the mutation engine of the fuzzer.
+    """
     def __init__(self, grammar: dict, rng_seed: int = 1):
         self.rng = random.Random(rng_seed)
         self.groups: Dict[str, OperatorGroup] = {}
@@ -31,6 +52,12 @@ class OperatorRegistry:
         return self.rng.choice(g.operators)
 
     def apply_operator(self, op: Operator, core: str) -> str:
+        """
+        Apply the given operator to the core payload.
+
+        The actual mutation logic is determined by
+        heuristic checks on the operator's sample string.
+        """
         s = core
         sample = op.sample
         # caret insertion heuristic

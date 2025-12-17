@@ -1,0 +1,56 @@
+[
+  {
+    "id": "seed_001",
+    "string": "powershell.exe -noni -ep bypass -Command \"$env:TEMP\"",
+    "Q_s": 0.1,
+    "n_s": 0,
+    "invalid_count": 0,
+    "cluster_id": 1,
+    "last_used": 1700001200
+  },
+  {
+    "id": "seed_002",
+    "string": "powershell -NonInteractive -ExecutionPolicy Bypass -Command \"$PSVersionTable\"",
+    "Q_s": 0.12,
+    "n_s": 0,
+    "invalid_count": 0,
+    "cluster_id": 2,
+    "last_used": 1700001201
+  },
+  {
+    "id": "seed_003",
+    "string": "pwsh.exe -NonI -Exec ByPass \"$x=1;Write-Host test\"",
+    "Q_s": 0.15,
+    "n_s": 0,
+    "invalid_count": 0,
+    "cluster_id": 3,
+    "last_used": 1700001202
+  },
+  {
+    "id": "seed_004",
+    "string": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -noni -ep bypass \"$env:APPDATA\"",
+    "Q_s": 0.13,
+    "n_s": 0,
+    "invalid_count": 0,
+    "cluster_id": 4,
+    "last_used": 1700001203
+  },
+  {
+    "id": "seed_005",
+    "string": "PoWeRsHeLl.ExE -ni -ep Unrestricted \"$test=1\"",
+    "Q_s": 0.14,
+    "n_s": 0,
+    "invalid_count": 0,
+    "cluster_id": 5,
+    "last_used": 1700001204
+  },
+  {
+    "id": "seed_006",
+    "string": "cmd.exe /c \"powershell -noni -ep bypass $env:SystemRoot\"",
+    "Q_s": 0.11,
+    "n_s": 0,
+    "invalid_count": 0,
+    "cluster_id": 6,
+    "last_used": 1700001205
+  }
+]

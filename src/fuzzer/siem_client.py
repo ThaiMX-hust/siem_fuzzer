@@ -5,7 +5,7 @@ from .validator import canonicalize_payload, normalize_spaces
 
 class SiemSimulator:
     def __init__(self, grammar: Dict):
-        self.regex = re.compile(grammar["rules"]["payload_core"]["constraints"]["regex_positive"])
+        self.regex = re.compile(grammar["constraints"]["regex_match"])
 
     def analyze(self, payload: str) -> Dict:
         can = canonicalize_payload(payload)
