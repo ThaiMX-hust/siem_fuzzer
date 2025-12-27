@@ -108,10 +108,11 @@ def list_available_rules(base_dir: Path):
     for grammar_file in sorted(grammar_dir.glob("*.json")):
         try:
             grammar = load_grammar(grammar_file)
+            name = grammar.get("meta", {}).get("name", "N/A")
             rule_id = grammar.get("meta", {}).get("rule_id", "N/A")
             desc = grammar.get("meta", {}).get("description", "No description")
             
-            print(f"\nRule: {grammar_file.stem}")
+            print(f"\nRule: {name}")
             print(f"  ID: {rule_id}")
             print(f"  Description: {desc}")
             print(f"  File: {grammar_file.name}")
@@ -128,7 +129,7 @@ def main():
         epilog="""
 Examples:
   # Fuzz with explicit paths
-  python scripts/fuzz.py -g conf/grammars/apt29.json -s conf/seeds/apt29_seeds.txt -n 100
+  python scripts/fuzz.py -g conf/grammars/apt29.json -s conf/seeds/apt29_seeds.json -n 100
 
   # Auto-discover files by rule name
   python scripts/fuzz.py -r apt29_powershell_bypass -n 50
@@ -201,7 +202,8 @@ Examples:
     
     # Display rule info
     meta = grammar.get("meta", {})
-    print(f"\n[*] Target Rule: {meta.get('rule_id', 'N/A')}")
+    print(f"\n[*] Target Rule: {meta.get('name', 'N/A')}")
+    print(f"[*] Rule ID: {meta.get('rule_id', 'N/A')}")
     print(f"[*] Description: {meta.get('description', 'N/A')}")
     print(f"[*] Max Payload Length: {meta.get('max_payload_len', 'N/A')}")
     print(f"[*] Fuzzing Parameters:")
@@ -255,13 +257,14 @@ Examples:
         output_file = project_root / "data" / "results" / f"{rule_name}_{timestamp}.json"
     
     output_file.parent.mkdir(parents=True, exist_ok=True)
+
     
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump({
             "meta": {
                 "rule": meta.get("rule_id"),
-                "grammar_file": str(grammar_file.relative_to(project_root)),
-                "seed_file": str(seed_file.relative_to(project_root)) if seed_file else None,
+                "grammar_file": str(grammar_file),
+                "seed_file": str(seed_file) if seed_file else None,
                 "timestamp": datetime.now().isoformat(),
                 "total": total,
                 "valid": valid,
@@ -271,7 +274,7 @@ Examples:
             "results": results
         }, f, indent=2)
     
-    print(f"\n[*] Results saved to: {output_file.relative_to(project_root)}")
+    print(f"\n[*] Results saved to: {output_file}")
 
 
 if __name__ == "__main__":

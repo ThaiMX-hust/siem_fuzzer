@@ -7,3 +7,4 @@ fastapi
 pytest 
 rich 
 python-dotenv
+opensearch-py
