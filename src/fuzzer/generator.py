@@ -8,8 +8,9 @@ from .seed_store import SeedStore
 from .operator_registry import OperatorRegistry
 from .mab.bandit import EpsilonGreedyBandit
 from .validator import Validator, canonicalize_payload
-from .siem_client import SiemSimulator
+from .siem_client import OpenSearchClient
 from .reward_engine import RewardEngine
+
 
 
 class PayloadGenerator:
@@ -22,7 +23,11 @@ class PayloadGenerator:
         self.op_registry = OperatorRegistry(grammar, rng_seed=2)
         groups = self.op_registry.list_groups()
         self.op_bandit = EpsilonGreedyBandit(groups, q_init=0.1, seed=3)
-        self.siem = SiemSimulator(grammar)
+
+        OPENSEARCH_HOST = "192.168.1.100"
+        OPENSEARCH_AUTH = ("admin", "admin")
+        self.siem = OpenSearchClient(grammar, host=OPENSEARCH_HOST, auth=OPENSEARCH_AUTH)
+        
         self.rewarder = RewardEngine()
         self.rng = random.Random(42)
         self.max_mut = int(grammar["mutation_engine"]["max_mutations"])
