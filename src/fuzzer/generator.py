@@ -322,12 +322,14 @@ class PayloadGenerator:
         return cur, applied
 
     def generate_one(self):
+        # 1. Generate payload
         seed = self.seed_store.select_seed_epsilon(self.eps_seed)
         core, mode = self.build_core_from_seed(seed.string)
         wrapper = self.choose_wrapper()
         mutated_core, applied = self.apply_mutations(core)
         payload = wrapper.format(payload=mutated_core)
 
+        # 2. Validate syntax
         valid_syntax = self.validator.full_check(payload, self.grammar["meta"]["max_payload_len"])
         exec_success = False
         detected = False
@@ -335,52 +337,52 @@ class PayloadGenerator:
         if valid_syntax:
             print(f"   [>] Executing: {payload[:50]}...")
             
-            # 3. THỰC THI (Execution)
+            # 3. Execution
             exec_res = self.executor.execute(payload)
             exec_success = exec_res["success"]
             
             if exec_success:
                 # 4. FEEDBACK (Check SIEM)
                 print("   [.] Waiting for SIEM logs...", end="", flush=True)
-                time.sleep(4) # Đợi log đẩy về OpenSearch
+                time.sleep(4) # Wait for logs to be pushed to OpenSearch
                 
                 siem_res = self.siem.analyze(payload)
                 detected = siem_res["detected"]
                 similarity = siem_res["similarity"]
                 
                 if detected:
-                    print(f"\r   [D] DETECTED (Sim: {similarity})")
+                    print(f"\r   [D] DETECTED (Siem: {similarity})")
                 else:
                     print(f"\r   [!] BYPASS FOUND! 💎")
             else:
                 print(f"   [x] Execution Failed (Code: {exec_res['returncode']})")
-                similarity = 0.0 # Không chạy được thì không tính similarity
+                similarity = 0.0 # If execution fails, do not count similarity
         else:
             similarity = 0.0
 
-        # 5. TÍNH ĐIỂM THƯỞNG (Reward Calculation)
+        # 5. REWARD CALCULATION
         # Logic: 
-        # - Phạt nặng nếu Syntax sai hoặc Chạy lỗi (invalid)
-        # - Thưởng lớn nếu Chạy được (valid) + Không bị phát hiện (bypass)
+        # - Heavy penalty if Syntax is invalid or Execution fails
+        # - Good if Execution succeeds and not detected
         
         is_invalid = (not valid_syntax) or (not exec_success)
         novelty = 1.0 
         
         reward = self.rewarder.compute(detected, similarity, novelty, is_invalid)
 
-        # 6. CẬP NHẬT MODEL (Bandit & Seed Store)
+        # 6. UPDATE MODEL (Bandit & Seed Store)
         self.seed_store.update_seed(seed.id, reward)
         for g in set(applied):
             self.op_bandit.update(g, reward)
 
-        # 7. LƯU KẾT QUẢ "VÀNG"
+        # 7. SAVE "GOLDEN" RESULTS
         if exec_success and (not detected):
             self.corpus_successful.append(payload)
             self.seed_store.boost_seed(seed.id, boost_scale=0.5)
 
         return {
             "payload": payload,
-            "valid": valid_syntax and exec_success, # Valid thực tế là phải chạy được
+            "valid": valid_syntax and exec_success, # Valid means it must run successfully
             "detected": detected,
             "similarity": similarity,
             "reward": reward,

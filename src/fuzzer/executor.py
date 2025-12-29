@@ -9,10 +9,10 @@ class PayloadExecutor:
 
     def execute(self, cmd: str) -> dict:
         """
-        Thực thi lệnh trên máy cục bộ và trả về kết quả
+        Execute command on local machine and return the result.
         """
         try:
-            # Sử dụng CREATE_NEW_PROCESS_GROUP để dễ kill process con
+            # Use CREATE_NEW_PROCESS_GROUP to easily kill child processes
             proc = subprocess.Popen(
                 cmd, 
                 shell=True, 
@@ -32,7 +32,7 @@ class PayloadExecutor:
             }
             
         except subprocess.TimeoutExpired:
-            # Kill process nếu treo
+            # Kill process if it hangs (timeout)
             proc.send_signal(signal.CTRL_BREAK_EVENT)
             time.sleep(1)
             proc.kill()
