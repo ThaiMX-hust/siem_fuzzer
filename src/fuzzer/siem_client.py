@@ -1,79 +1,67 @@
 # src/fuzzer/siem_client.py
 import time
-import subprocess
+import urllib3
 from typing import Dict
 from opensearchpy import OpenSearch
 from .validator import canonicalize_payload, normalize_spaces
 
-class OpenSearchClient:
-    def __init__(self, grammar: Dict, host: str, auth: tuple):
-        # Kết nối đến OpenSearch
+# Tắt cảnh báo certificate (cho lab self-signed)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+class RealSiemClient:
+    def __init__(self, grammar: Dict, host="192.168.150.21", port=9200, auth=("admin", "Bkcs@2025@2025")):
+        # Kết nối OpenSearch
         self.client = OpenSearch(
-            hosts=[{'host': host, 'port': 9200}],
+            hosts=[{'host': host, 'port': port}],
             http_compress=True,
             http_auth=auth,
             use_ssl=True,
             verify_certs=False,
             ssl_show_warn=False
         )
-        self.index_pattern = "wazuh-alerts-*" # Ví dụ index chứa alerts
-
-    def _execute_payload(self, payload: str):
-        """
-        Thực thi payload trên máy test để sinh log gửi về SIEM.
-        LƯU Ý: Cần chạy trong môi trường Sandbox/VM an toàn.
-        """
-        try:
-            # Ví dụ thực thi lệnh (DANGER: Chỉ chạy trong sandbox)
-            # subprocess.run(payload, shell=True, timeout=5)
-            print(f"[EXECUTOR] Running: {payload}")
-            pass 
-        except Exception as e:
-            print(f"Execution error: {e}")
-
-    def _query_detection(self, payload: str) -> bool:
-        """
-        Query OpenSearch để xem payload vừa chạy có sinh ra alert không
-        """
-        # Chờ một chút để log được đẩy về OpenSearch (Latency)
-        time.sleep(2) 
+        # Index pattern của bạn (winlogbeat-*)
+        self.index_pattern = "winlogbeat-*"
         
-        # Query DSL: Tìm alert chứa payload trong 1 phút gần nhất
+        # Regex phụ trợ (nếu cần dùng để tính similarity)
+        self.regex_positive = grammar.get("rules", {}).get("payload_core", {}).get("constraints", {}).get("regex_positive")
+
+    def analyze(self, payload: str) -> Dict:
+        """
+        Query OpenSearch xem payload có xuất hiện trong log không.
+        """
+        # --- QUERY ĐÃ ĐIỀU CHỈNH THEO FIELD CỦA BẠN ---
         query = {
             "query": {
                 "bool": {
                     "must": [
-                        {"match_phrase": {"data.win.system.message": payload}}, # Field tùy chỉnh theo log source
-                        {"range": {"@timestamp": {"gte": "now-1m"}}}
+                        # Tìm chính xác chuỗi payload trong trường Command Line của Windows Log
+                        {"match_phrase": {"winlog.event_data.CommandLine": payload}}, 
+                        # Chỉ tìm trong 15s gần nhất để tránh log cũ
+                        {"range": {"@timestamp": {"gte": "now-15s"}}}
                     ]
                 }
             }
         }
 
-        response = self.client.search(
-            body=query,
-            index=self.index_pattern
-        )
-        
-        # Nếu có hit (kết quả) nghĩa là bị detect
-        return response['hits']['total']['value'] > 0
+        detected = False
+        try:
+            # Retry 3 lần (tổng ~6s) để chờ log được index
+            for _ in range(3):
+                response = self.client.search(body=query, index=self.index_pattern)
+                hits = response['hits']['total']['value']
+                
+                if hits > 0:
+                    detected = True
+                    break
+                
+                time.sleep(2) # Đợi 2s rồi thử lại
+        except Exception as e:
+            print(f"[!] OpenSearch Query Error: {e}")
+            detected = False
 
-    def analyze(self, payload: str) -> Dict:
-        """
-        Hàm chính được Generator gọi
-        """
-        # 1. Thực thi payload
-        self._execute_payload(payload)
-
-        # 2. Query SIEM lấy feedback
-        detected = self._query_detection(payload)
-
-        # 3. Tính similarity (Logic nội bộ, không cần SIEM)
+        # Tính toán các chỉ số khác cho thuật toán Bandit
         can = canonicalize_payload(payload)
-        sim = 1.0 if can == normalize_spaces(payload) else 0.5
-
-        return {
-            "detected": detected,
-            "similarity": sim,
-            "canonical": can
-        }
+        # Nếu bị detect -> Sim = 1.0 (để phạt), nếu không -> tính sim dựa trên biến đổi chuỗi
+        sim = 1.0 if detected else (1.0 if can == normalize_spaces(payload) else 0.5)
+        
+        return {"detected": detected, "similarity": sim, "canonical": can}

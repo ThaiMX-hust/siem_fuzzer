@@ -1,5 +1,6 @@
 # src/fuzzer/generator.py
 import random
+import time
 from typing import List ,Tuple, Optional
 import re
 from .config import load_grammar
@@ -8,7 +9,8 @@ from .seed_store import SeedStore
 from .operator_registry import OperatorRegistry
 from .mab.bandit import EpsilonGreedyBandit
 from .validator import Validator, canonicalize_payload
-from .siem_client import OpenSearchClient
+from .executor import PayloadExecutor
+from .siem_client import RealSiemClient
 from .reward_engine import RewardEngine
 
 
@@ -24,10 +26,10 @@ class PayloadGenerator:
         groups = self.op_registry.list_groups()
         self.op_bandit = EpsilonGreedyBandit(groups, q_init=0.1, seed=3)
 
-        OPENSEARCH_HOST = "192.168.1.100"
-        OPENSEARCH_AUTH = ("admin", "admin")
-        self.siem = OpenSearchClient(grammar, host=OPENSEARCH_HOST, auth=OPENSEARCH_AUTH)
-        
+        self.executor = PayloadExecutor(timeout=10)
+        print("[*] Connecting to OpenSearch (192.168.150.21)...")
+        self.siem = RealSiemClient(grammar)
+       
         self.rewarder = RewardEngine()
         self.rng = random.Random(42)
         self.max_mut = int(grammar["mutation_engine"]["max_mutations"])
@@ -325,25 +327,66 @@ class PayloadGenerator:
         wrapper = self.choose_wrapper()
         mutated_core, applied = self.apply_mutations(core)
         payload = wrapper.format(payload=mutated_core)
-        valid = self.validator.full_check(payload, self.grammar["meta"]["max_payload_len"])
-        sim = self.siem.analyze(payload)
-        novelty = 1.0  # placeholder; compute more precisely if you store corpus
-        reward = self.rewarder.compute(sim["detected"], sim["similarity"], novelty, not valid)
-        # update seed and operator bandit
+
+        valid_syntax = self.validator.full_check(payload, self.grammar["meta"]["max_payload_len"])
+        exec_success = False
+        detected = False
+        
+        if valid_syntax:
+            print(f"   [>] Executing: {payload[:50]}...")
+            
+            # 3. THỰC THI (Execution)
+            exec_res = self.executor.execute(payload)
+            exec_success = exec_res["success"]
+            
+            if exec_success:
+                # 4. FEEDBACK (Check SIEM)
+                print("   [.] Waiting for SIEM logs...", end="", flush=True)
+                time.sleep(4) # Đợi log đẩy về OpenSearch
+                
+                siem_res = self.siem.analyze(payload)
+                detected = siem_res["detected"]
+                similarity = siem_res["similarity"]
+                
+                if detected:
+                    print(f"\r   [D] DETECTED (Sim: {similarity})")
+                else:
+                    print(f"\r   [!] BYPASS FOUND! 💎")
+            else:
+                print(f"   [x] Execution Failed (Code: {exec_res['returncode']})")
+                similarity = 0.0 # Không chạy được thì không tính similarity
+        else:
+            similarity = 0.0
+
+        # 5. TÍNH ĐIỂM THƯỞNG (Reward Calculation)
+        # Logic: 
+        # - Phạt nặng nếu Syntax sai hoặc Chạy lỗi (invalid)
+        # - Thưởng lớn nếu Chạy được (valid) + Không bị phát hiện (bypass)
+        
+        is_invalid = (not valid_syntax) or (not exec_success)
+        novelty = 1.0 
+        
+        reward = self.rewarder.compute(detected, similarity, novelty, is_invalid)
+
+        # 6. CẬP NHẬT MODEL (Bandit & Seed Store)
         self.seed_store.update_seed(seed.id, reward)
         for g in set(applied):
             self.op_bandit.update(g, reward)
-        if (not sim["detected"]) and valid:
-            self.corpus_successful.append(canonicalize_payload(mutated_core))
-            self.seed_store.boost_seed(seed.id, boost_scale=0.4)
+
+        # 7. LƯU KẾT QUẢ "VÀNG"
+        if exec_success and (not detected):
+            self.corpus_successful.append(payload)
+            self.seed_store.boost_seed(seed.id, boost_scale=0.5)
+
         return {
             "payload": payload,
-            "valid": valid,
-            "detected": sim["detected"],
-            "similarity": sim["similarity"],
+            "valid": valid_syntax and exec_success, # Valid thực tế là phải chạy được
+            "detected": detected,
+            "similarity": similarity,
             "reward": reward,
             "seed_id": seed.id,
-            "applied_groups": applied
+            "applied_groups": applied,
+            "exec_output": exec_res if valid_syntax else None
         }
 
     def run_batch(self, n: int = 20):
