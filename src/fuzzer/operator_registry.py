@@ -37,13 +37,22 @@ class OperatorRegistry:
 
     It acts as the mutation engine of the fuzzer.
     """
-    def __init__(self, grammar: dict, rng_seed: int = 1):
+    def __init__(self, grammar: dict, rng_seed=42):
         self.rng = random.Random(rng_seed)
         self.groups: Dict[str, OperatorGroup] = {}
         for gname, gdef in grammar.get("obfuscation_groups", {}).items():
             ops = [Operator(op["name"], op["sample"]) for op in gdef.get("operators", [])]
             self.groups[gname] = OperatorGroup(gname, ops)
-
+        
+        # Add 5 evasion techniques
+        self.evasion_techniques = {
+            "insertion": self._apply_insertion,
+            "substitution": self._apply_substitution,
+            "omission": self._apply_omission,
+            "reordering": self._apply_reordering,
+            "recoding": self._apply_recoding
+        }
+    
     def list_groups(self) -> List[str]:
         return list(self.groups.keys())
 
@@ -51,25 +60,132 @@ class OperatorRegistry:
         g = self.groups[group_name]
         return self.rng.choice(g.operators)
 
-    def apply_operator(self, op: Operator, core: str) -> str:
+    def _apply_insertion(self, payload: str) -> str:
         """
-        Apply the given operator to the core payload.
-
-        The actual mutation logic is determined by
-        heuristic checks on the operator's sample string.
+        Insert characters between critical keywords
+        Examples:
+        - schtasks /create → schtasks /"create"
+        - net start → net /"start"
         """
-        s = core
-        sample = op.sample
-        # caret insertion heuristic
-        if "^" in sample:
-            s = re.sub(r"(\w+)(\.exe)", lambda m: m.group(1)[:1] + "^" + m.group(1)[1:] + m.group(2), s, count=1)
-            return s
-        # quote wrapper
-        if sample.startswith('"') and sample.endswith('"'):
-            s = re.sub(r'(\S+\.exe)', lambda m: f"\"{m.group(1)}\"", s, count=1)
-            return s
-        # uppercase
-        if sample.isupper():
-            s = re.sub(r"(\S+\.exe)", lambda m: m.group(1).upper(), s, count=1)
-            return s
-        return s
+        # Target critical keywords from grammar
+        keywords = ["create", "start", "stop", "delete", "config"]
+        
+        for kw in keywords:
+            if kw in payload.lower():
+                # Insert quotes or extra characters
+                patterns = [
+                    (kw, f'/"{kw}"'),           # /create → /"create"
+                    (kw, f'/{kw[0]}""{kw[1:]}'), # /create → /c""reate
+                    (kw, f'  {kw}'),            # Extra spaces
+                ]
+                
+                pattern, replacement = self.rng.choice(patterns)
+                payload = payload.replace(pattern, replacement)
+                break
+        
+        return payload
+    
+    def _apply_substitution(self, payload: str) -> str:
+        """
+        Replace flags/arguments with long-form equivalents
+        Examples:
+        - curl -O → curl --remote-name
+        - powershell -ep bypass → powershell -ExecutionPolicy bypass
+        """
+        substitutions = {
+            "-O": "--remote-name",
+            "-o": "--output",
+            "-ep": "-ExecutionPolicy",
+            "-enc": "-EncodedCommand",
+            "-w": "-WindowStyle",
+            "-nop": "-NoProfile",
+        }
+        
+        for short, long in substitutions.items():
+            if short in payload:
+                payload = payload.replace(short, long)
+                break
+        
+        return payload
+    
+    def _apply_omission(self, payload: str) -> str:
+        """
+        Remove optional parts (like .exe extension)
+        Examples:
+        - cscript.exe → cscript
+        - powershell.exe → powershell
+        """
+        # Remove .exe extensions
+        executables = ["schtasks.exe", "net.exe", "sc.exe", "powershell.exe", 
+                      "cmd.exe", "wmic.exe", "cscript.exe"]
+        
+        for exe in executables:
+            if exe in payload.lower():
+                payload = payload.replace(exe, exe.replace(".exe", ""))
+                break
+        
+        return payload
+    
+    def _apply_reordering(self, payload: str) -> str:
+        """
+        Reorder arguments (if semantically valid)
+        Examples:
+        - procdump -ma lsass → procdump lsass -ma
+        - net start Spooler /y → net start /y Spooler
+        """
+        # Simple reordering: move flags after arguments
+        parts = payload.split()
+        
+        # Find flags (start with - or /)
+        flags = [p for p in parts if p.startswith('-') or p.startswith('/')]
+        non_flags = [p for p in parts if not (p.startswith('-') or p.startswith('/'))]
+        
+        if flags and len(non_flags) > 2:
+            # Move some flags to the end
+            flag_to_move = self.rng.choice(flags)
+            parts.remove(flag_to_move)
+            parts.append(flag_to_move)
+            
+            return " ".join(parts)
+        
+        return payload
+    
+    def _apply_recoding(self, payload: str) -> str:
+        """
+        Encode values in different representations
+        Examples:
+        - IP address: 127.0.0.1 → 2130706433 (decimal)
+        - Port: 8080 → 0x1F90 (hex)
+        """
+        import re
+        
+        # Find IP addresses
+        ip_pattern = r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b'
+        ips = re.findall(ip_pattern, payload)
+        
+        for ip in ips:
+            # Convert to decimal (e.g., 127.0.0.1 → 2130706433)
+            octets = [int(x) for x in ip.split('.')]
+            decimal = (octets[0] << 24) + (octets[1] << 16) + (octets[2] << 8) + octets[3]
+            payload = payload.replace(ip, str(decimal))
+            break
+        
+        return payload
+    
+    def apply_operator(self, op_name: str, payload: str) -> str:
+        """Enhanced operator application with evasion techniques"""
+        # Check if it's an evasion technique
+        if op_name in self.evasion_techniques:
+            return self.evasion_techniques[op_name](payload)
+        
+        # ...existing code for traditional operators...
+    def _apply_evasion_technique(self, technique: str, payload: str) -> str:
+        """Public method to apply evasion techniques"""
+        if technique not in self.evasion_techniques:
+            raise ValueError(f"Unknown evasion technique: {technique}")
+        
+        return self.evasion_techniques[technique](payload)
+    
+    def list_evasion_techniques(self) -> list:
+        """List all available evasion techniques"""
+        return list(self.evasion_techniques.keys())

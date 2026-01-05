@@ -1,0 +1,280 @@
+{
+  "meta": {
+    "name": "apt29_powershell_bypass",
+    "rule_id": "033fe7d6-66d1-4240-ac6b-28908009c71f",
+    "version": "v2.0",
+    "technique_id": "T1548.002",
+    "description": "APT29 PowerShell UAC bypass with 5 evasion techniques (insertion, substitution, omission, reordering, recoding)",
+    "target_rule": "win_apt29_powershell_bypass",
+    "max_payload_len": 1024
+  },
+  "terminals": {
+    "executables": [
+      { "tok": "powershell.exe", "weight": 1.0 },
+      { "tok": "powershell", "weight": 0.8 },
+      { "tok": "pwsh.exe", "weight": 0.6 },
+      { "tok": "pwsh", "weight": 0.5 },
+      { "tok": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "weight": 0.3 }
+    ],
+    "separators": [
+      { "tok": " ", "weight": 1.0 },
+      { "tok": "\t", "weight": 0.2 },
+      { "tok": "  ", "weight": 0.3 }
+    ],
+    "noni_flags": [
+      { "tok": "-noni", "weight": 1.0 },
+      { "tok": "-NonInteractive", "weight": 0.8 },
+      { "tok": "-NonI", "weight": 0.6 },
+      { "tok": "-ni", "weight": 0.4 }
+    ],
+    "ep_flags": [
+      { "tok": "-ep", "weight": 1.0 },
+      { "tok": "-ExecutionPolicy", "weight": 0.8 },
+      { "tok": "-Exec", "weight": 0.5 },
+      { "tok": "-ex", "weight": 0.3 }
+    ],
+    "bypass_values": [
+      { "tok": "bypass", "weight": 1.0 },
+      { "tok": "Bypass", "weight": 0.9 },
+      { "tok": "Unrestricted", "weight": 0.4 },
+      { "tok": "RemoteSigned", "weight": 0.2 }
+    ],
+    "script_blocks": [
+      { "tok": "$env:TEMP", "weight": 1.0 },
+      { "tok": "$PSVersionTable", "weight": 0.8 },
+      { "tok": "$x=1;Write-Host 'test'", "weight": 0.7 },
+      { "tok": "Write-Host 'test';$y=2", "weight": 0.6 },
+      { "tok": "[System.Environment]::UserName", "weight": 0.5 }
+    ],
+    "wrappers": [
+      { "fmt": "{payload}", "weight": 1.0 },
+      { "fmt": "cmd.exe /c \"{payload}\"", "weight": 0.5 },
+      { "fmt": "cmd /r \"{payload}\"", "weight": 0.4 },
+      { "fmt": "%COMSPEC% /c {payload}", "weight": 0.3 }
+    ],
+    "noise": [
+      { "tok": "", "weight": 0.7 },
+      { "tok": "\"\"", "weight": 0.15 },
+      { "tok": "^", "weight": 0.1 },
+      { "tok": "&::", "weight": 0.05 }
+    ]
+  },
+  "obfuscation_groups": {
+    "caret_escape": {
+      "target_terminals": ["executables", "noni_flags", "ep_flags", "bypass_values"],
+      "operators": [
+        { "name": "random_caret", "sample": "p^o^wershell", "prob": 0.3 },
+        { "name": "caret_flags", "sample": "-n^oni", "prob": 0.25 }
+      ]
+    },
+    "quote_wrap": {
+      "target_terminals": ["executables", "bypass_values", "script_blocks"],
+      "operators": [
+        { "name": "double_quote", "sample": "\"powershell.exe\"", "prob": 0.25 },
+        { "name": "single_quote_arg", "sample": "'bypass'", "prob": 0.20 },
+        { "name": "quote_flags", "sample": "\"-ep\"", "prob": 0.15 }
+      ]
+    },
+    "case_variants": {
+      "target_terminals": ["executables", "noni_flags", "ep_flags", "bypass_values"],
+      "operators": [
+        { "name": "upper", "sample": "POWERSHELL", "prob": 0.15 },
+        { "name": "mixed", "sample": "PoWeRsHeLl", "prob": 0.20 },
+        { "name": "camel", "sample": "PowerShell", "prob": 0.15 },
+        { "name": "lower", "sample": "powershell", "prob": 0.10 }
+      ]
+    },
+    "encoding": {
+      "target_terminals": ["script_blocks"],
+      "operators": [
+        { "name": "base64", "sample": "-EncodedCommand <base64>", "prob": 0.10 },
+        { "name": "hex_escape", "sample": "\\x24env", "prob": 0.05 }
+      ]
+    }
+  },
+  "evasion_techniques": {
+    "insertion": {
+      "description": "Insert characters between keywords to break pattern matching",
+      "operators": [
+        {
+          "name": "insert_quotes_in_flags",
+          "pattern": "/create",
+          "replacement": "/\"create\"",
+          "sample": "powershell -ep bypass → powershell -\"ep\" bypass",
+          "prob": 0.3
+        },
+        {
+          "name": "insert_extra_spaces",
+          "pattern": " ",
+          "replacement": "  ",
+          "sample": "-ep bypass → -ep  bypass",
+          "prob": 0.2
+        }
+      ]
+    },
+    "substitution": {
+      "description": "Replace with equivalent long-form representations",
+      "operators": [
+        {
+          "name": "expand_ep_flag",
+          "short": "-ep",
+          "long": "-ExecutionPolicy",
+          "sample": "-ep bypass → -ExecutionPolicy bypass",
+          "prob": 0.4
+        },
+        {
+          "name": "expand_noni_flag",
+          "short": "-noni",
+          "long": "-NonInteractive",
+          "sample": "-noni → -NonInteractive",
+          "prob": 0.4
+        }
+      ]
+    },
+    "omission": {
+      "description": "Remove non-essential parts",
+      "operators": [
+        {
+          "name": "remove_exe_extension",
+          "pattern": ".exe",
+          "replacement": "",
+          "sample": "powershell.exe → powershell",
+          "prob": 0.5
+        },
+        {
+          "name": "remove_optional_noise",
+          "pattern": "\"\"",
+          "replacement": "",
+          "sample": "powershell\"\" -ep → powershell -ep",
+          "prob": 0.3
+        }
+      ]
+    },
+    "reordering": {
+      "description": "Change argument order (semantically valid)",
+      "operators": [
+        {
+          "name": "swap_flags",
+          "sample": "-noni -ep bypass → -ep bypass -noni",
+          "prob": 0.4
+        },
+        {
+          "name": "move_command_last",
+          "sample": "-Command $x -ep bypass → -ep bypass -Command $x",
+          "prob": 0.3
+        }
+      ]
+    },
+    "recoding": {
+      "description": "Encode values in different representations",
+      "operators": [
+        {
+          "name": "base64_command",
+          "sample": "-Command $x → -EncodedCommand <base64>",
+          "prob": 0.2
+        },
+        {
+          "name": "unicode_escape",
+          "sample": "$env → \\u0024env",
+          "prob": 0.1
+        }
+      ]
+    }
+  },
+  "rules": {
+    "entry_point": {
+      "type": "structure",
+      "components": [
+        { "type": "choose", "from": "wrappers", "params": { "payload": "payload_core" } }
+      ]
+    },
+    "payload_core": {
+      "type": "sequence",
+      "structures": [
+        [
+          { "type": "choose", "from": "executables" },
+          { "type": "choose", "from": "separators" },
+          { "type": "choose", "from": "noise" },
+          { "type": "choose", "from": "noni_flags" },
+          { "type": "choose", "from": "separators" },
+          { "type": "choose", "from": "noise" },
+          { "type": "choose", "from": "ep_flags" },
+          { "type": "choose", "from": "separators" },
+          { "type": "choose", "from": "bypass_values" },
+          { "type": "choose", "from": "separators" },
+          { "type": "literal", "tok": "-Command" },
+          { "type": "choose", "from": "separators" },
+          { "type": "choose", "from": "script_blocks" }
+        ]
+      ]
+    }
+  },
+  "constraints": {
+    "must_contain_keywords": ["powershell", "bypass", "$"],
+    "must_contain_flags": ["-ep", "-noni"],
+    "flexible_regex": "(?i).*(powershell|pwsh).*(bypass|unrestricted).*(\\$|\\[System)",
+    "validation": {
+      "min_length": 20,
+      "max_length": 1024,
+      "allow_reordering": true,
+      "case_insensitive": true
+    }
+  },
+  "mutation_engine": {
+    "max_mutations": 5,
+    "preserve_keywords": true,
+    "operator_groups": {
+      "obfuscation_basic": {
+        "operators": ["caret_escape", "quote_wrap", "case_variants"],
+        "description": "Basic Windows obfuscation techniques",
+        "weight": 1.0
+      },
+      "evasion_insertion": {
+        "operators": ["insert_quotes_in_flags", "insert_extra_spaces"],
+        "description": "Insert characters to break patterns",
+        "weight": 0.8
+      },
+      "evasion_substitution": {
+        "operators": ["expand_ep_flag", "expand_noni_flag"],
+        "description": "Use long-form equivalents",
+        "weight": 0.9
+      },
+      "evasion_omission": {
+        "operators": ["remove_exe_extension", "remove_optional_noise"],
+        "description": "Remove non-essential parts",
+        "weight": 0.7
+      },
+      "evasion_reordering": {
+        "operators": ["swap_flags", "move_command_last"],
+        "description": "Change argument order",
+        "weight": 0.6
+      },
+      "evasion_recoding": {
+        "operators": ["base64_command", "unicode_escape"],
+        "description": "Encode in different formats",
+        "weight": 0.4
+      }
+    }
+  },
+  "sampling": {
+    "strategy": "weighted_random",
+    "epsilon_seed": 0.2,
+    "epsilon_group": 0.15,
+    "seed": 42,
+    "mab_config": {
+      "algorithm": "epsilon_greedy",
+      "q_init": 0.1,
+      "update_rule": "running_average"
+    }
+  },
+  "siem_detection": {
+    "opensearch_index": "winlogbeat-*",
+    "query_template": {
+      "query_string": {
+        "query": "(powershell OR pwsh) AND (bypass OR unrestricted) AND ($env OR $PSVersionTable)",
+        "analyze_wildcard": true
+      }
+    },
+    "similarity_threshold": 0.85
+  }
+}

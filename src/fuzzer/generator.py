@@ -12,23 +12,60 @@ from .validator import Validator, canonicalize_payload
 from .executor import PayloadExecutor
 from .siem_client import RealSiemClient
 from .reward_engine import RewardEngine
-
-
-
+from .llm_mutator import LLMMutator
+from dotenv import load_dotenv
 class PayloadGenerator:
-    def __init__(self, grammar: dict, custom_seeds: list = None):
+    def __init__(
+        self, 
+        grammar: dict, 
+        custom_seeds: list = None, 
+        use_llm: bool = False,
+        llm_rate: float = 0.3,
+        llm_model: str = "gemini-2.5-flash"
+    ):
+        load_dotenv()
         self.grammar = grammar
         self.validator = Validator(grammar)
-        # simple initial seeds
         seeds = custom_seeds
         self.seed_store = SeedStore(seeds, rng_seed=1)
         self.op_registry = OperatorRegistry(grammar, rng_seed=2)
+        
+        # Get traditional mutation groups
         groups = self.op_registry.list_groups()
-        self.op_bandit = EpsilonGreedyBandit(groups, q_init=0.1, seed=3)
+        
+        # Add evasion techniques as bandit arms
+        evasion_techniques = [
+            "evasion_insertion",
+            "evasion_substitution", 
+            "evasion_omission",
+            "evasion_reordering",
+            "evasion_recoding"
+        ]
+        
+        # Combine traditional + evasion arms
+        all_arms = list(groups) + evasion_techniques
+        
+        # Initialize bandit with all arms
+        self.op_bandit = EpsilonGreedyBandit(all_arms, q_init=0.1, seed=3)
 
         self.executor = PayloadExecutor(timeout=10)
         print("[*] Connecting to OpenSearch (192.168.150.21)...")
         self.siem = RealSiemClient(grammar)
+        
+        # LLM Configuration
+        self.use_llm = use_llm
+        self.llm_rate = llm_rate
+        self.llm_mutator = None
+        self.mutation_history = []
+        
+        if use_llm:
+            try:
+                self.llm_mutator = LLMMutator(model=llm_model, use_cache=True)
+                print(f"[+] LLM Mutator initialized (model: {llm_model})")
+            except Exception as e:
+                print(f"[!] Failed to initialize LLM: {e}")
+                print("[*] Falling back to traditional mutations only")
+                self.use_llm = False
        
         self.rewarder = RewardEngine()
         self.rng = random.Random(42)
@@ -308,17 +345,74 @@ class PayloadGenerator:
         return self.pick_weighted(self.grammar["terminals"]["wrappers"], key="fmt")
 
     def apply_mutations(self, core: str):
+        """
+        Apply mutations with priority on evasion techniques
+        """
         applied = []
-        k = self.rng.randint(1, self.max_mut)
         cur = core
+        
+        # Step 1: Randomly apply one evasion technique (50% chance)
+        if self.rng.random() < 0.5:
+            evasion_techniques = [
+                "insertion", "substitution", "omission", 
+                "reordering", "recoding"
+            ]
+            technique = self.rng.choice(evasion_techniques)
+            
+            try:
+                cur = self.op_registry._apply_evasion_technique(technique, cur)
+                
+                # Record with evasion_ prefix to match bandit arm name
+                applied.append(f"evasion_{technique}")
+                print(f"   [EVASION] Applied {technique}: {cur[:50]}...")
+            except Exception as e:
+                print(f"   [!] Evasion {technique} failed: {e}")
+        
+        # Step 2: LLM mutation (with evasion knowledge)
+        use_llm_this_round = (
+            self.use_llm and 
+            self.llm_mutator is not None and 
+            self.rng.random() < self.llm_rate
+        )
+        
+        if use_llm_this_round:
+            try:
+                print(f"   [LLM] Mutating with evasion awareness...", end="", flush=True)
+                
+                mutated = self.llm_mutator.mutate_payload(
+                    payload=cur,
+                    target_rule=self.grammar["meta"]["target_rule"],
+                    mutation_history=self.mutation_history,
+                    fallback_on_error=True
+                )
+                
+                if mutated and self.validator.quick_check(mutated):
+                    cur = mutated
+                    self.mutation_history.append(mutated)
+                    applied.append("llm_mutation")  # Track LLM separately
+                    print(f"\r   [LLM] ✓ Generated: {cur[:40]}...")
+                else:
+                    print(f"\r   [LLM] ✗ Invalid, falling back")
+                    
+            except Exception as e:
+                print(f"\r   [LLM] ✗ Error: {e}")
+        
+        # Step 3: Traditional mutations
+        k = self.rng.randint(1, self.max_mut)
         for _ in range(k):
             g = self.op_bandit.select_arm(self.eps_group)
+            
+            # Skip if it's an evasion arm (already applied in Step 1)
+            if g.startswith("evasion_"):
+                continue
+            
             op = self.op_registry.choose_operator_from_group(g)
             new = self.op_registry.apply_operator(op, cur)
             if not self.validator.quick_check(new):
                 continue
             cur = new
             applied.append(g)
+        
         return cur, applied
 
     def generate_one(self):
@@ -344,7 +438,7 @@ class PayloadGenerator:
             if exec_success:
                 # 4. FEEDBACK (Check SIEM)
                 print("   [.] Waiting for SIEM logs...", end="", flush=True)
-                time.sleep(4) # Wait for logs to be pushed to OpenSearch
+                time.sleep(4)
                 
                 siem_res = self.siem.analyze(payload)
                 detected = siem_res["detected"]
@@ -356,15 +450,11 @@ class PayloadGenerator:
                     print(f"\r   [!] BYPASS FOUND! 💎")
             else:
                 print(f"   [x] Execution Failed (Code: {exec_res['returncode']})")
-                similarity = 0.0 # If execution fails, do not count similarity
+                similarity = 0.0
         else:
             similarity = 0.0
 
         # 5. REWARD CALCULATION
-        # Logic: 
-        # - Heavy penalty if Syntax is invalid or Execution fails
-        # - Good if Execution succeeds and not detected
-        
         is_invalid = (not valid_syntax) or (not exec_success)
         novelty = 1.0 
         
@@ -372,8 +462,17 @@ class PayloadGenerator:
 
         # 6. UPDATE MODEL (Bandit & Seed Store)
         self.seed_store.update_seed(seed.id, reward)
+        
+        # Update bandit for each applied group
         for g in set(applied):
-            self.op_bandit.update(g, reward)
+            # Only update if arm exists in bandit
+            if g in self.op_bandit.arms:
+                self.op_bandit.update(g, reward)
+            elif g == "llm_mutation":
+                # Track LLM separately (optional: add as separate arm)
+                pass
+            else:
+                print(f"[WARNING] Unknown arm '{g}' - skipping bandit update")
 
         # 7. SAVE "GOLDEN" RESULTS
         if exec_success and (not detected):
@@ -382,7 +481,7 @@ class PayloadGenerator:
 
         return {
             "payload": payload,
-            "valid": valid_syntax and exec_success, # Valid means it must run successfully
+            "valid": valid_syntax and exec_success,
             "detected": detected,
             "similarity": similarity,
             "reward": reward,
@@ -396,13 +495,27 @@ class PayloadGenerator:
         for i in range(n):
             r = self.generate_one()
             logs.append(r)
-            print(f"[{i+1}/{n}] payload={r['payload']!r} valid={r['valid']} detected={r['detected']} reward={r['reward']:.3f}")
-        print("\n-- operator Q --")
+            
+            # Enhanced logging
+            status = "✓" if r["valid"] else "✗"
+            detect_status = "DETECTED" if r["detected"] else "BYPASS"
+            
+            print(f"[{i+1}/{n}] {status} {detect_status} | "
+                  f"Reward: {r['reward']:.3f} | "
+                  f"Payload: {r['payload'][:60]}...")
+        
+        print("\n-- Operator Q Values --")
         for a, q in self.op_bandit.q.items():
-            print(f"{a}: q={q:.3f} n={self.op_bandit.n[a]}")
-        print("-- seed Q --")
-        for s in self.seed_store.list_seeds():
-            print(f"{s.id}: q_s={s.q_s:.3f} n={s.n_s} str={s.string!r}")
+            print(f"  {a}: Q={q:.3f} (n={self.op_bandit.n[a]})")
+        
+        print("\n-- Seed Q Values --")
+        for s in self.seed_store.list_seeds()[:5]:
+            print(f"  {s.id}: Q={s.q_s:.3f} (n={s.n_s}) | {s.string[:50]}...")
+        
+        # Print LLM stats
+        if self.use_llm and self.llm_mutator:
+            self.llm_mutator.print_stats()
+        
         return logs
 
 if __name__ == "__main__":

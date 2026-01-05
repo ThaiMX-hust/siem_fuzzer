@@ -61,7 +61,7 @@ def auto_find_files(rule_name: str, base_dir: Path) -> tuple:
     
     Example:
         rule_name = "apt29_powershell_bypass"
-        → grammar: conf/grammars/apt29_powershell_bypass.v1.json
+        → grammar: conf/grammars/apt29_powershell_bypass.v2.json
         → seeds: conf/seeds/apt29_powershell_bypass_seeds.txt
     """
     grammar_dir = base_dir / "conf" / "grammars"
@@ -69,7 +69,7 @@ def auto_find_files(rule_name: str, base_dir: Path) -> tuple:
     
     # Try to find grammar file
     grammar_patterns = [
-        grammar_dir / f"{rule_name}.v1.json",
+        grammar_dir / f"{rule_name}.v2.json",
         grammar_dir / f"{rule_name}.json",
     ]
     
@@ -124,18 +124,21 @@ def list_available_rules(base_dir: Path):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Universal SIEM Rule Fuzzer",
+        description="Universal SIEM Rule Fuzzer with Gemini",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Fuzz with explicit paths
-  python scripts/fuzz.py -g conf/grammars/apt29.json -s conf/seeds/apt29_seeds.json -n 100
+  # Traditional fuzzing only
+  python scripts/fuzz.py -r win_net_start_service -n 100
 
-  # Auto-discover files by rule name
-  python scripts/fuzz.py -r apt29_powershell_bypass -n 50
+  # LLM-enhanced fuzzing with Gemini Flash (fast & cheap)
+  python scripts/fuzz.py -r apt29_powershell_bypass -n 50 --use-llm
 
-  # List all available rules
-  python scripts/fuzz.py --list-rules
+  # Use Gemini Pro (more capable, slower)
+  python scripts/fuzz.py -r apt29_powershell_bypass -n 30 --use-llm --llm-model gemini-2.5-pro
+
+  # Heavy LLM usage (80% LLM mutations)
+  python scripts/fuzz.py -r apt29_powershell_bypass -n 30 --use-llm --llm-rate 0.8
         """
     )
     
@@ -153,6 +156,14 @@ Examples:
     parser.add_argument("--epsilon-seed", type=float, help="Override epsilon for seed selection")
     parser.add_argument("--epsilon-group", type=float, help="Override epsilon for operator group selection")
     parser.add_argument("--max-mutations", type=int, help="Override max mutations per payload")
+    
+    # LLM parameters
+    parser.add_argument("--use-llm", action="store_true", help="Enable LLM-enhanced mutations")
+    parser.add_argument("--llm-model", type=str, default="gemini-2.5-flash", 
+                        choices=["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash", "gemini-3-flash", "gemini-3-pro"],
+                        help="Gemini model (default: gemini-2.5-flash)")
+    parser.add_argument("--llm-rate", type=float, default=0.3,
+                        help="Percentage of mutations using LLM (0.0-1.0, default: 0.3)")
     
     args = parser.parse_args()
     
@@ -214,7 +225,13 @@ Examples:
 
     
     # Initialize generator with custom seeds
-    gen = PayloadGenerator(grammar, custom_seeds=custom_seeds)
+    gen = PayloadGenerator(
+        grammar, 
+        custom_seeds=custom_seeds,
+        use_llm=args.use_llm,
+        llm_rate=args.llm_rate,
+        llm_model=args.llm_model
+    )
     
     # Run fuzzing
     print(f"\n[*] Starting fuzzing campaign...")
